@@ -491,6 +491,7 @@ Live backlog of every piece of work captured under the Agile way of working ([[f
 | [SHY-0711](SHY-0711-the-website-sends-people-to-addresses-nobody-reads.md) | P0 | S | bug | The website sends people to addresses nobody reads, one on a domain anybody can buy | 📝 Draft | — |  |
 | [SHY-0712](SHY-0712-check-whether-shytalk-co-uk-is-renewed.md) | P3 | XS | chore | Check whether shytalk.co.uk is renewed, and tell Shyden if it is released | 📝 Draft | — |  |
 | [SHY-0713](SHY-0713-support-agents-answer-with-saved-replies.md) | P2 | L | feature | Support agents answer common requests with saved replies | 📝 Draft | EPIC-0012 |  |
+| [SHY-0714](SHY-0714-test-accounts-use-a-domain-anybody-can-buy.md) | P0 | M | bug | The test accounts use addresses on a domain anybody can buy | 📝 Draft | — |  |
 
 ## Done
 
