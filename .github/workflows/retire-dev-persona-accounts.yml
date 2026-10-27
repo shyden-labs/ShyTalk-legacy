@@ -34,6 +34,9 @@ on:
           - shytalk.dev
         default: shytalk.dev
 
+# Intentionally global (INTENTIONAL_GLOBALS in
+# scripts/check-workflow-concurrency-scoping.sh): every run acts on the one
+# dev Auth, so a disable and a delete dispatched from two refs must queue.
 concurrency:
   group: retire-dev-persona-accounts
   cancel-in-progress: false
