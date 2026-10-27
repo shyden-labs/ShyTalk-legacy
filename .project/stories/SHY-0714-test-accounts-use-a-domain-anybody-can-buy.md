@@ -83,7 +83,13 @@ x.com 12, x.dev 12, the rest under 5 each). Shyden, 2026-10-27, picked
 ### Security
 
 - [ ] Read Auth on dev (and prod, read-only, with consent) for any account
-      on a domain we do not own; the count is 0 after the change.
+      at `shytalk.dev` or another domain our own code or data invented; the
+      count is 0 after the change. Accounts at real domains (13 on dev,
+      2026-10-28) go with SHY-0716's dev reset, production's with SHY-0717
+      (decisions 117-118).
+- [ ] The dev smoke account, made by hand and not by
+      `provision-test-personas.js`, moves to `shytalk.app` before the old
+      accounts are disabled, and Dev Smoke Tests pass on it (decision 116).
 
 ### UX
 
