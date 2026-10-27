@@ -118,12 +118,12 @@ Not announced: a correction to contact details.
 
 - The app's strings naming `shytalk.help@gmail.com`: SHY-0422.
 - The sending domain and inbound mail for tickets: SHY-0395.
-- Dev persona addresses on `shytalk.dev`: closed once Shyden owns the
-  domain (bought 2026-10-27 decision, his purchase).
+- Dev persona addresses on `shytalk.dev`: SHY-0714 (Shyden 2026-10-27 is
+  not buying `shytalk.dev`).
 
 ## Dependencies
 
-- Shyden buys `shytalk.app` and `shytalk.dev` in ShyTalk's own Cloudflare
+- Shyden buys `shytalk.app` (only) in ShyTalk's own Cloudflare
   account and opens the Zoho Mail Free mailbox (his steps).
 
 ## Risks & Mitigations

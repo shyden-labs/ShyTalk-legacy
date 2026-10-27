@@ -187,8 +187,8 @@ about support-by-email depends on it.
   most of them.
 - Related: [[SHY-0386]] (`routes/health.js` never mounted) is the same shape —
   infrastructure that was configured but never actually connected to anything.
-- **2026-10-27 (Shyden):** ShyTalk's domain is `shytalk.app` (plus `shytalk.dev`
-  bought to protect the persona addresses), in ShyTalk's own Cloudflare account;
+- **2026-10-27 (Shyden):** ShyTalk's domain is `shytalk.app` (only; `shytalk.dev`
+  is not bought, so persona addresses move: SHY-0714), in ShyTalk's own Cloudflare account;
   this replaces `mail.shyden.co.uk` above. The support address is
   `support@shytalk.app`, a Zoho Mail Forever Free mailbox until the help desk
   (EPIC-0012, rebuilt in the rewrite) takes email in. Inbound for tickets can be
