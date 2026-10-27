@@ -66,7 +66,9 @@ const ALLOWED = [
 // Measured 2026-10-21: git-visible YAML files under ROOTS (29 workflows and
 // 14 actions, the APK check among them). Equality, so a file added or lost
 // is seen and this figure re-measured.
-const FILES_READ_FLOOR = 43;
+// 43 -> 44: .github/workflows/retire-dev-persona-accounts.yml (SHY-0714; it reads no
+// persona password, so SITES_FLOOR is unchanged).
+const FILES_READ_FLOOR = 44;
 // Measured 2026-10-21: keys and strings naming the secret across those
 // files, every one of them judged by rule 1. 12 = seed-dev-personas 4 (the
 // declaration key, the preflight's env and its run text, the seed action's

@@ -4,12 +4,12 @@ status: Draft
 owner: claude
 created: 2026-10-27
 priority: P0
-effort: M
-estimate: 5
+effort: XL
+estimate: 13
 type: bug
 roadmap_ids: []
 mvp: true
-blocked_by: [SHY-0711]
+blocked_by: []
 ---
 
 # SHY-0714: The test accounts use addresses on a domain anybody can buy
@@ -34,6 +34,13 @@ registers the domain can take over every one of these accounts, the dev
 administrator included. Shyden, 2026-10-27: *"i'm not buying shytalk.dev.
 only shytalk.app."* So the addresses move to `shytalk.app`.
 
+The same risk sits under every other made-up address at a real domain.
+Measured 2026-10-27 over all 2,957 tracked files: **703 addresses at
+domains ShyTalk does not own, in 123 files, over 33 domains** (shytalk.dev
+235, gmail.com 230, test.com 81, work.com 59, b.com 15, mailinator.com 13,
+x.com 12, x.dev 12, the rest under 5 each). Shyden, 2026-10-27, picked
+"Full rule, this story": every one moves or is listed with its reason.
+
 ## Acceptance Criteria
 
 ### Happy path
@@ -47,14 +54,25 @@ only shytalk.app."* So the addresses move to `shytalk.app`.
 ### Error paths
 
 - [ ] A guard over the whole tree fails on any address at a domain not on an
-      owned-domains list (`shytalk.app`, `shyden.co.uk`, plus reserved
-      `example.*` and `*.test`), floored at the measured file count,
-      planted red with `@shytalk.dev`.
+      owned-domains list (`shytalk.app`, `shyden.co.uk`, plus the reserved
+      `example.com`/`.net`/`.org`, `*.test`, `*.invalid`, `*.example`),
+      floored at the measured file count, planted red with `@shytalk.dev`
+      and with a templated address (`${stamp}@shytalk.dev`).
+- [ ] Every made-up address at a domain we do not own (gmail.com, test.com,
+      work.com, x.com, b.com and the rest) moves to a reserved name; the
+      guard's allowed list is empty of made-up addresses.
 
 ### Edge cases
 
 - [ ] Ticket files and plans quoting the old address as history keep it,
       listed by path in the guard's allowed set with the reason.
+- [ ] Addresses that must name a real domain (the disposable-email
+      blocklist and its tests, provider behaviour, service-account formats,
+      `shytalk.help@gmail.com` until SHY-0711 replaces it) are listed by
+      path and domain, each with its reason.
+- [ ] `com.shyden.shytalk.dev` (the dev app's package id) and other
+      non-address `shytalk.dev` text are untouched; the guard judges `@`
+      addresses only.
 - [ ] Mail to the new test addresses never reaches a real inbox by accident:
       routing for test addresses decided and written in this story.
 
@@ -109,8 +127,10 @@ Not announced: test accounts only.
 
 ## Dependencies
 
-- SHY-0711: `shytalk.app` bought and the mailbox set up first.
 - Shyden's consent for the Firebase Auth changes on dev.
+- Not SHY-0711: Shyden lifted that block 2026-10-27 ("Start now"). The
+  domain is owned since 2026-10-27T04:00Z; until the mailbox exists, mail
+  to the new addresses bounces.
 
 ## Risks & Mitigations
 
@@ -127,3 +147,10 @@ Not announced: test accounts only.
 - 2026-10-27: estimate 5 against SHY-0662 (5, persona password out of every
   shared build: the same persona files plus a guard); this adds Auth
   re-provisioning on dev.
+- 2026-10-27: re-estimated 5 -> 13 when the scope grew to every unowned
+  domain (decision 114): 123 files instead of 70, plus an allowed list
+  with a reason per entry. Against SHY-0545 (the retired-org guard, a
+  whole-tree walk with a files-read floor), whose walker this guard shares.
+- 2026-10-27: `retire-dev-persona-accounts.yml` ships without a practice-
+  runner rehearsal (Shyden: "Workflow now, act later", decision 115);
+  SHY-0715 brings act to it and the 15 other hand-started workflows.

@@ -1,0 +1,88 @@
+name: Retire Dev Persona Accounts
+
+# SHY-0714: the dev personas were created at @shytalk.dev, a domain nobody
+# owns, so whoever registers it can reset their passwords. Shyden
+# 2026-10-27: "old accounts to be removed and disabled". Dispatched by hand,
+# in this order:
+#
+#   1. mode=list     reads dev Auth and prints the accounts at the domain
+#                    (other unowned domains as counts only: these logs are
+#                    public and a tester owns their own mailbox).
+#   2. mode=disable  disables them at once and reads every write back.
+#   3. mode=delete   after the shytalk.app replacements are proven; refuses
+#                    while any account at the domain is still enabled.
+#
+# Dev only: the target is fixed to shytalk-dev, the script refuses any
+# project that is not dev/local/emulator, and the domain is a choice of the
+# ones our own test data invented (scripts/retire-persona-accounts.js).
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'list (read only), disable, or delete (only after disable)'
+        type: choice
+        options:
+          - list
+          - disable
+          - delete
+        default: list
+      domain:
+        description: 'The domain whose accounts are retired'
+        type: choice
+        options:
+          - shytalk.dev
+        default: shytalk.dev
+
+# Intentionally global (INTENTIONAL_GLOBALS in
+# scripts/check-workflow-concurrency-scoping.sh): every run acts on the one
+# dev Auth, so a disable and a delete dispatched from two refs must queue.
+concurrency:
+  group: retire-dev-persona-accounts
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  retire:
+    name: Retire dev accounts (${{ inputs.mode }} ${{ inputs.domain }})
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Verify the dev service account is present
+        env:
+          SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SA_JSON:-}" ]; then
+            echo "::error title=Dev accounts cannot be retired::Missing repository secret FIREBASE_SERVICE_ACCOUNT_DEV."
+            exit 1
+          fi
+          echo "The dev service account is present."
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: ./.github/actions/setup-node
+
+      - name: Retire the accounts
+        env:
+          SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_DEV }}
+          MODE: ${{ inputs.mode }}
+          DOMAIN: ${{ inputs.domain }}
+        run: |
+          set -euo pipefail
+          umask 077
+          echo "$SA_JSON" > /tmp/firebase-sa-retire.json
+          trap 'rm -f /tmp/firebase-sa-retire.json' EXIT
+          export GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase-sa-retire.json
+          export FIREBASE_PROJECT_ID=shytalk-dev
+          export FIREBASE_DATABASE_URL=https://shytalk-dev-default-rtdb.europe-west1.firebasedatabase.app
+          cd express-api
+          npm ci --omit=dev --no-audit --no-fund
+          node scripts/retire-persona-accounts.js --domain "$DOMAIN" --mode "$MODE" | tee /tmp/retire.log
+          if ! grep -qE "^RETIRE_DONE mode=$MODE domain=$DOMAIN acted=[0-9]+$" /tmp/retire.log; then
+            echo "::error title=Retiring did not complete::the script never printed RETIRE_DONE for mode=$MODE domain=$DOMAIN."
+            exit 1
+          fi
+          grep -E '^RETIRE_(SCANNED|UNOWNED|DONE)' /tmp/retire.log >> "$GITHUB_STEP_SUMMARY"
