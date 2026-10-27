@@ -151,3 +151,6 @@ Not announced: test accounts only.
   domain (decision 114): 123 files instead of 70, plus an allowed list
   with a reason per entry. Against SHY-0545 (the retired-org guard, a
   whole-tree walk with a files-read floor), whose walker this guard shares.
+- 2026-10-27: `retire-dev-persona-accounts.yml` ships without a practice-
+  runner rehearsal (Shyden: "Workflow now, act later", decision 115);
+  SHY-0715 brings act to it and the 15 other hand-started workflows.
