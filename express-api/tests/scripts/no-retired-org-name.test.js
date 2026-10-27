@@ -127,7 +127,9 @@ const PRUNE_PATHS = new Set([path.join('.husky', '_')]);
 // tests/scripts/device-journey-wait-for-id-gone.test.js and
 // shared/.../feature/messaging/ReactionTagsTest.kt (SHY-0645).
 // 2048 -> 2049: tests/scripts/device-journey-signout-overlays.unit.test.js (SHY-0702).
-const FILES_READ_FLOOR = 2049;
+// 2049 -> 2054: scripts/retire-persona-accounts.js, scripts/lib/owned-email-domains.js,
+// their two unit tests and .github/workflows/retire-dev-persona-accounts.yml (SHY-0714).
+const FILES_READ_FLOOR = 2054;
 
 function findRetiredName(text) {
   return text.match(RETIRED) ?? [];
