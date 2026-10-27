@@ -77,6 +77,7 @@ should be as small as the job allows.
 | _to be filed_ | — | Claim / assign / reassign lifecycle |
 | _to be filed_ | — | Reply path back to the person in-app |
 | _to be filed_ | — | Agent audit trail and support metrics |
+| **SHY-0713** | Draft | Saved replies agents insert and edit before sending (Shyden 2026-10-27). |
 
 Children beyond SHY-0380 are deliberately **not** filed yet. The portal work
 they depend on is not defined, and a story written now would be refined against
@@ -106,5 +107,10 @@ assumptions rather than a real surface.
   `public/admin/js/tabs/appeals.js`) is the closest existing shape and is the
   template SHY-0380 follows. If this epic later unifies appeals, reports, and
   support tickets, that is a migration story of its own.
+- **2026-10-27 (Shyden):** the help desk stays ShyTalk's own, not a third-party tool: members raise, update and
+  track tickets in their account; email stays a route in (`support@shytalk.app`, SHY-0398); several people
+  log in to claim and handle tickets (one at first). It is rebuilt in the app rewrite, *"likely to change into
+  something even better"*, so child stories state behaviour, not today's screens. Until then
+  `support@shytalk.app` is a Zoho Mail Forever Free mailbox.
 - Least privilege is the point of the separate role, and ShyTalk's minor cohort
   is why it matters more here than in a typical product.

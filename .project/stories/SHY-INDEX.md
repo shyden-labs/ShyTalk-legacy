@@ -488,6 +488,9 @@ Live backlog of every piece of work captured under the Agile way of working ([[f
 | [SHY-0660](SHY-0660-the-floating-bubble-prompt-stops-returning-on-every-sign-in.md) | P0 | S | bug | The floating-bubble prompt stops returning on every sign-in | 📝 Draft | — |  |
 | [SHY-0661](SHY-0661-the-preview-badge-never-hides-a-screens-top-right-icons.md) | P0 | S | bug | The preview badge never hides a screen's top-right icons | 📝 Draft | — |  |
 | [SHY-0662](SHY-0662-no-shared-or-distributed-build-carries-the-dev-persona-password.md) | P0 | M | bug | No shared or distributed build carries the dev persona password | 📝 Draft | — |  |
+| [SHY-0711](SHY-0711-the-website-sends-people-to-addresses-nobody-reads.md) | P0 | S | bug | The website sends people to addresses nobody reads, one on a domain anybody can buy | 📝 Draft | — |  |
+| [SHY-0712](SHY-0712-check-whether-shytalk-co-uk-is-renewed.md) | P3 | XS | chore | Check whether shytalk.co.uk is renewed, and tell Shyden if it is released | 📝 Draft | — |  |
+| [SHY-0713](SHY-0713-support-agents-answer-with-saved-replies.md) | P2 | L | feature | Support agents answer common requests with saved replies | 📝 Draft | EPIC-0012 |  |
 
 ## Done
 
