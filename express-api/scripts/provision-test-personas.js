@@ -488,8 +488,18 @@ function unownedPersonas(list) {
   return list.filter((p) => !isOwnedEmailDomain(emailDomain(p.email)));
 }
 
+/**
+ * True when firebase-admin's Auth calls go to the local emulator (src/utils/
+ * firebase.js sets the host when NODE_ENV=local). No address there reaches a
+ * real mailbox, so the local seed (seed-personas-local.js) may keep them.
+ */
+function writesToAuthEmulator(env) {
+  return Boolean(env.FIREBASE_AUTH_EMULATOR_HOST);
+}
+
 /** Why the runner must not start, or null. Names ids only: CI logs are public. */
-function registryRefusal(list) {
+function registryRefusal(list, env = process.env) {
+  if (writesToAuthEmulator(env)) return null;
   const unowned = unownedPersonas(list);
   if (unowned.length === 0) return null;
   return (
@@ -505,7 +515,7 @@ function registryRefusal(list) {
  * firebase-admin handles.
  */
 async function upsertPersona(p, ctx) {
-  if (unownedPersonas([p]).length > 0) {
+  if (unownedPersonas([p]).length > 0 && !writesToAuthEmulator(ctx.env ?? process.env)) {
     throw new Error(
       `REFUSED_UNOWNED_DOMAIN ${p.id}: ${emailDomain(p.email) ?? 'no domain'} ` +
         'is not a domain ShyTalk owns (SHY-0714); nothing was written',

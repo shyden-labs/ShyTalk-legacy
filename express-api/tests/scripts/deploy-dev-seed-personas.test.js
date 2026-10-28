@@ -44,14 +44,15 @@ const SEED_ACTION = readFileSync(
 // ── deploy-dev.yml — invokes the reusable workflow ─────────────────────
 
 describe('deploy-dev.yml — seed-dev-personas job (reusable workflow caller)', () => {
-  test('declares a workflow_dispatch input `seed-personas` defaulting to true', () => {
-    // Same toggle as before the refactor; default `true` so seed runs on
-    // every dev deploy unless the operator explicitly opts out via
-    // `gh workflow run deploy-dev.yml -f seed-personas=false`.
-    expect(DEPLOY_DEV).toMatch(/^ {6}seed-personas:$/m);
-    const inputBlock = DEPLOY_DEV.match(/^ {6}seed-personas:[\s\S]{1,300}?default: (true|false)/m);
-    expect(inputBlock).not.toBeNull();
-    expect(inputBlock[1]).toBe('true');
+  test('the dispatch form has no `seed-personas` box until SHY-0714 PR 2', () => {
+    // SHY-0714, decision 120 (Shyden 2026-10-28, "fix the workflow and remove
+    // that"): the personas still live at shytalk.dev, which the seeder refuses,
+    // so a box ticked by default only turned hand-started deploys red. PR 2
+    // brings the box back (default true) with the personas at shytalk.app.
+    // Liveness: the neighbouring box is found by the same pattern.
+    expect(DEPLOY_DEV).toMatch(/^ {6}playwright:$/m);
+    expect(DEPLOY_DEV).not.toMatch(/^ {6}seed-personas:$/m);
+    expect(DEPLOY_DEV).not.toContain('inputs.seed-personas');
   });
 
   test('seed step is a top-level JOB (not a step inside deploy-backend-dev) — refactored 2026-05-29', () => {

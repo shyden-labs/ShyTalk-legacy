@@ -30,7 +30,6 @@ const TICKED = {
   web: 'true',
   'android-testers': 'true',
   'ios-testers': 'true',
-  'seed-personas': 'true',
   playwright: 'true',
 };
 
@@ -133,19 +132,22 @@ describe('a hand-started dispatch', () => {
     ).toBe(false);
   });
 
-  test('a ticked seed box still seeds (the seeder itself refuses unowned addresses)', () => {
+  // SHY-0714, decision 120 (Shyden 2026-10-28: "fix the workflow and remove
+  // that"): the form has no seed box until PR 2, so a hand-started deploy
+  // never seeds and never goes red on the seeder's refusal.
+  test('never seeds the personas', () => {
     expect(
       plan({ ...base, event: 'workflow_dispatch', scope: ALL_CHANGED, inputs: TICKED }).seed,
-    ).toBe(true);
+    ).toBe(false);
   });
 
-  test('the persona seed follows its box', () => {
+  test('never seeds even when a caller still passes the old seed-personas input', () => {
     expect(
       plan({
         ...base,
         event: 'workflow_dispatch',
         scope: ALL_CHANGED,
-        inputs: { ...TICKED, 'seed-personas': 'false' },
+        inputs: { ...TICKED, 'seed-personas': 'true' },
       }).seed,
     ).toBe(false);
   });

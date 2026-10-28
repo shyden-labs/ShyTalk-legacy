@@ -516,15 +516,18 @@ describe('unownedPersonas', () => {
 
 describe('registryRefusal', () => {
   test('is null when every persona is at a domain we own', () => {
-    expect(registryRefusal([{ id: 'A', email: 'a@shytalk.app' }])).toBeNull();
+    expect(registryRefusal([{ id: 'A', email: 'a@shytalk.app' }], {})).toBeNull();
   });
 
   test('names how many personas and which ids, never an address', () => {
-    const message = registryRefusal([
-      { id: 'A', email: 'a@shytalk.app' },
-      { id: 'B', email: 'b@shytalk.dev' },
-      { id: 'C', email: 'c@gmail.com' },
-    ]);
+    const message = registryRefusal(
+      [
+        { id: 'A', email: 'a@shytalk.app' },
+        { id: 'B', email: 'b@shytalk.dev' },
+        { id: 'C', email: 'c@gmail.com' },
+      ],
+      {},
+    );
     expect(message).toBe(
       'REFUSED_UNOWNED_DOMAIN 2 of 3 personas (B, C) are at a domain ShyTalk does not own (SHY-0714); nothing was written',
     );
@@ -535,7 +538,19 @@ describe('registryRefusal', () => {
   // runner refuses the real registry until SHY-0714 PR 2 moves them.
   test('refuses the real registry today', () => {
     expect(personas).toHaveLength(17);
-    expect(registryRefusal(personas)).toMatch(/^REFUSED_UNOWNED_DOMAIN 17 of 17 personas /);
+    expect(registryRefusal(personas, {})).toMatch(/^REFUSED_UNOWNED_DOMAIN 17 of 17 personas /);
+  });
+
+  // The local emulator (seed-personas-local.js, the gauntlet's re-seed): no
+  // address there reaches a real mailbox, so nobody can take an account over.
+  test('lets the registry through when Auth writes go to the local emulator', () => {
+    expect(registryRefusal(personas, { FIREBASE_AUTH_EMULATOR_HOST: 'localhost:9099' })).toBeNull();
+  });
+
+  test('an empty emulator host is not the emulator', () => {
+    expect(registryRefusal(personas, { FIREBASE_AUTH_EMULATOR_HOST: '' })).toMatch(
+      /^REFUSED_UNOWNED_DOMAIN /,
+    );
   });
 });
 
@@ -556,7 +571,10 @@ describe('upsertPersona refuses an unowned address before any write', () => {
     const db = {
       doc: jest.fn(() => {
         calls.push('doc');
-        return { get: jest.fn(), set: jest.fn() };
+        return {
+          get: jest.fn(async () => ({ exists: false, data: () => ({}) })),
+          set: jest.fn(async () => {}),
+        };
       }),
     };
     return { auth, db, calls, FieldValue: { delete: jest.fn() } };
@@ -572,12 +590,23 @@ describe('upsertPersona refuses an unowned address before any write', () => {
     async (_, email, named) => {
       const stubs = recordingStubs();
       const persona = { ...personas.find((p) => p.id === 'P-02'), email };
-      await expect(upsertPersona(persona, { ...stubs, pw })).rejects.toThrow(
+      await expect(upsertPersona(persona, { ...stubs, pw, env: {} })).rejects.toThrow(
         `REFUSED_UNOWNED_DOMAIN P-02: ${named} is not a domain ShyTalk owns (SHY-0714); nothing was written`,
       );
       expect(stubs.calls).toEqual([]);
     },
   );
+
+  test('seeds a shytalk.dev persona when Auth writes go to the local emulator', async () => {
+    const stubs = recordingStubs();
+    const persona = personas.find((p) => p.id === 'P-02');
+    await upsertPersona(persona, {
+      ...stubs,
+      pw,
+      env: { FIREBASE_AUTH_EMULATOR_HOST: 'localhost:9099' },
+    });
+    expect(stubs.calls[0]).toBe('getUserByEmail');
+  });
 });
 
 // ── applySocialGraph — writes numeric arrays ────────────────────────

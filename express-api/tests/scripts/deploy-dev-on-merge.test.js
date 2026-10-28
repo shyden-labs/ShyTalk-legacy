@@ -48,7 +48,9 @@ describe('triggers', () => {
     expect(wf.on.schedule[0].cron).toMatch(/^\d{1,2} \d{1,2} \* \* \*$/);
   });
 
-  test('hand dispatch keeps every input it had', () => {
+  // SHY-0714, decision 120: no seed-personas box until PR 2 moves the
+  // personas to shytalk.app; PR 2 puts it back after playwright.
+  test('hand dispatch keeps every input it had, but the seed box', () => {
     expect(Object.keys(wf.on.workflow_dispatch.inputs)).toEqual([
       'ref',
       'backend',
@@ -56,7 +58,6 @@ describe('triggers', () => {
       'android-testers',
       'ios-testers',
       'playwright',
-      'seed-personas',
       'release-notes',
     ]);
   });
@@ -82,9 +83,9 @@ describe('one decision point', () => {
       INPUT_WEB: '${{ inputs.web }}',
       INPUT_ANDROID_TESTERS: '${{ inputs.android-testers }}',
       INPUT_IOS_TESTERS: '${{ inputs.ios-testers }}',
-      INPUT_SEED_PERSONAS: '${{ inputs.seed-personas }}',
       INPUT_PLAYWRIGHT: '${{ inputs.playwright }}',
     });
+    expect(plan.env).not.toHaveProperty('INPUT_SEED_PERSONAS');
   });
 
   // SHY-0714, decision 119: the fail-safe deploys every area but never seeds

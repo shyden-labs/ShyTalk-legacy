@@ -32,7 +32,6 @@ const BOXES = {
   web: 'web',
   android: 'android-testers',
   ios: 'ios-testers',
-  seed: 'seed-personas',
   checks: 'playwright',
 };
 
@@ -86,11 +85,12 @@ function plan({ event, baseline, head, scope, inputs = {} }) {
   }
   const out = { changed, reason };
   for (const area of AREAS) out[area] = requested(event, inputs, area) && changed[area];
-  // SHY-0714, decision 119 (Shyden 2026-10-28, "this needs to be removed"):
-  // the personas still live at shytalk.dev, a domain nobody owns, so only a
-  // hand-ticked box seeds them, and the seeder refuses that until SHY-0714
-  // PR 2 moves them to shytalk.app. PR 2 restores seeding on every push.
-  out.seed = event === 'workflow_dispatch' && requested(event, inputs, 'seed');
+  // SHY-0714, decisions 119-120 (Shyden 2026-10-28, "this needs to be
+  // removed", then "fix the workflow and remove that"): the personas still
+  // live at shytalk.dev, a domain nobody owns, which the seeder refuses, so
+  // no run seeds and the dispatch form has no seed box. SHY-0714 PR 2 moves
+  // them to shytalk.app and restores both.
+  out.seed = false;
   out.checks = requested(event, inputs, 'checks');
   return out;
 }
@@ -114,7 +114,6 @@ function main(env = process.env) {
     web: env.INPUT_WEB,
     'android-testers': env.INPUT_ANDROID_TESTERS,
     'ios-testers': env.INPUT_IOS_TESTERS,
-    'seed-personas': env.INPUT_SEED_PERSONAS,
     playwright: env.INPUT_PLAYWRIGHT,
   };
   const p = plan({
