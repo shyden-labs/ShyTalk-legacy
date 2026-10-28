@@ -87,6 +87,21 @@ describe('one decision point', () => {
     });
   });
 
+  // SHY-0714, decision 119: the fail-safe deploys every area but never seeds
+  // the personas, which still live at shytalk.dev until PR 2 moves them.
+  test('the fail-safe writes seed=false, never seed=true', () => {
+    const run = step('detect-deploy-scope', 'Resolve baseline and classify the change set').run;
+    const start = run.indexOf('emit_failsafe() {');
+    const end = run.indexOf('\n}\n', start);
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    const body = run.slice(start, end);
+    // Liveness: the slice is the fail-safe that deploys every area.
+    expect(body).toContain('echo "checks=true"');
+    expect(body).toContain('echo "seed=false"');
+    expect(body).not.toMatch(/seed=true/);
+  });
+
   test('the scope job still classifies with scripts/deploy-scope.sh', () => {
     expect(
       step('detect-deploy-scope', 'Resolve baseline and classify the change set').run,

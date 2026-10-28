@@ -134,10 +134,12 @@ jobs:
           set -uo pipefail
           # The fail-safe deploys every area, even one a dispatch left unticked:
           # deploying too much costs minutes, deploying too little ships nothing.
+          # It never seeds: the personas still live at shytalk.dev, a domain
+          # nobody owns, until SHY-0714 PR 2 (decision 119).
           emit_failsafe() {
             {
               for area in backend web android ios; do echo "$area=true"; echo "changed_$area=true"; done
-              echo "seed=true"; echo "checks=true"
+              echo "seed=false"; echo "checks=true"
               echo "reason=detection-failed-failing-safe"
               echo "trigger=$EVENT"
               echo "baseline=unresolved"

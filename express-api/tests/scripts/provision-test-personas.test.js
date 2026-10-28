@@ -33,6 +33,8 @@ const {
   assertSafeProject,
   upsertPersona,
   applySocialGraph,
+  unownedPersonas,
+  registryRefusal,
 } = require('../../scripts/provision-test-personas');
 
 // ── Persona registry shape ──────────────────────────────────────────
@@ -394,7 +396,11 @@ describe('upsertPersona (stubbed IO)', () => {
     return { auth, db, authCalls, docCalls, lastSet, FieldValue };
   }
 
-  const greta = personas.find((p) => p.id === 'P-12');
+  // SHY-0714 (decision 119): the seeder refuses an address at a domain we do
+  // not own, and every registry persona is still at shytalk.dev until PR 2,
+  // so these IO tests seed a copy at the reserved .test TLD.
+  const owned = (p) => ({ ...p, email: p.email.replace(/@[^@]+$/, '@personas.test') });
+  const greta = owned(personas.find((p) => p.id === 'P-12'));
   const pw = 'test-password-not-real-just-for-test'.padEnd(20, 'x'); // dodge secret scanner via build-up
 
   test('creates a new auth user when one does not exist', async () => {
@@ -418,7 +424,7 @@ describe('upsertPersona (stubbed IO)', () => {
     expect(gretaClaimCall[2]).toEqual({ uniqueId: 90000001, cohort: 'adult', admin: true });
     expect(gretaClaimCall[2]).not.toHaveProperty('isAdmin');
 
-    const alice = personas.find((p) => p.id === 'P-02');
+    const alice = owned(personas.find((p) => p.id === 'P-02'));
     const aStubs = makeStubs();
     await upsertPersona(alice, { ...aStubs, pw });
     const aliceClaimCall = aStubs.authCalls.find((c) => c[0] === 'setClaims');
@@ -428,7 +434,7 @@ describe('upsertPersona (stubbed IO)', () => {
 
   test('written users doc uses `ageVerified` field name', async () => {
     const stubs = makeStubs();
-    const alice = personas.find((p) => p.id === 'P-02');
+    const alice = owned(personas.find((p) => p.id === 'P-02'));
     await upsertPersona(alice, { ...stubs, pw });
     const userDoc = stubs.lastSet['users/50000010'];
     expect(userDoc.ageVerified).toBe(true);
@@ -443,7 +449,7 @@ describe('upsertPersona (stubbed IO)', () => {
         isAgeVerified: false, // stale wrong-name field from a prior buggy run
       },
     });
-    const alice = personas.find((p) => p.id === 'P-02');
+    const alice = owned(personas.find((p) => p.id === 'P-02'));
     await upsertPersona(alice, { ...stubs, pw });
     const userDoc = stubs.lastSet['users/50000010'];
     expect(userDoc.isAgeVerified).toBe('__DELETE__');
@@ -460,7 +466,7 @@ describe('upsertPersona (stubbed IO)', () => {
         followerCount: 88,
       },
     });
-    const alice = personas.find((p) => p.id === 'P-02');
+    const alice = owned(personas.find((p) => p.id === 'P-02'));
     await upsertPersona(alice, { ...stubs, pw });
     const userDoc = stubs.lastSet['users/50000010'];
     expect(userDoc.followingCount).toBe('__DELETE__');
@@ -469,16 +475,109 @@ describe('upsertPersona (stubbed IO)', () => {
 
   test('writes identityMap row keyed by email', async () => {
     const stubs = makeStubs();
-    const alice = personas.find((p) => p.id === 'P-02');
+    const alice = owned(personas.find((p) => p.id === 'P-02'));
     await upsertPersona(alice, { ...stubs, pw });
-    const idMap = stubs.lastSet['identityMap/email:adult-power@shytalk.dev'];
+    const idMap = stubs.lastSet['identityMap/email:adult-power@personas.test'];
     expect(idMap).toMatchObject({
       provider: 'email',
-      identifier: 'adult-power@shytalk.dev',
+      identifier: 'adult-power@personas.test',
       uniqueId: 50000010,
       isQa: true,
     });
   });
+});
+
+// ── Owned-domain refusal (SHY-0714, decision 119) ───────────────────
+// Shyden 2026-10-28: the shytalk.dev seeding "needs to be removed". The
+// seeder never writes an account at a domain we do not own: anybody who
+// registers that domain could reset the account's password.
+
+describe('unownedPersonas', () => {
+  test('returns only the personas at a domain we do not own', () => {
+    const list = [
+      { id: 'A', email: 'a@shytalk.app' },
+      { id: 'B', email: 'b@shytalk.dev' },
+      { id: 'C', email: 'c@personas.test' },
+      { id: 'D', email: 'd@gmail.com' },
+    ];
+    expect(unownedPersonas(list).map((p) => p.id)).toEqual(['B', 'D']);
+  });
+
+  test('catches look-alikes of an owned domain and an address with no domain', () => {
+    const list = [
+      { id: 'E', email: 'e@shytalk.app.evil.com' },
+      { id: 'F', email: 'f@evil-shytalk.app' },
+      { id: 'G', email: 'no-at-sign' },
+      { id: 'H', email: 'h@SHYTALK.APP' },
+    ];
+    expect(unownedPersonas(list).map((p) => p.id)).toEqual(['E', 'F', 'G']);
+  });
+});
+
+describe('registryRefusal', () => {
+  test('is null when every persona is at a domain we own', () => {
+    expect(registryRefusal([{ id: 'A', email: 'a@shytalk.app' }])).toBeNull();
+  });
+
+  test('names how many personas and which ids, never an address', () => {
+    const message = registryRefusal([
+      { id: 'A', email: 'a@shytalk.app' },
+      { id: 'B', email: 'b@shytalk.dev' },
+      { id: 'C', email: 'c@gmail.com' },
+    ]);
+    expect(message).toBe(
+      'REFUSED_UNOWNED_DOMAIN 2 of 3 personas (B, C) are at a domain ShyTalk does not own (SHY-0714); nothing was written',
+    );
+    expect(message).not.toContain('@');
+  });
+
+  // Measured 2026-10-28: all 17 registry personas are at shytalk.dev, so the
+  // runner refuses the real registry until SHY-0714 PR 2 moves them.
+  test('refuses the real registry today', () => {
+    expect(personas).toHaveLength(17);
+    expect(registryRefusal(personas)).toMatch(/^REFUSED_UNOWNED_DOMAIN 17 of 17 personas /);
+  });
+});
+
+describe('upsertPersona refuses an unowned address before any write', () => {
+  function recordingStubs() {
+    const calls = [];
+    const record = (name) =>
+      jest.fn(async () => {
+        calls.push(name);
+        return { uid: 'fb-x' };
+      });
+    const auth = {
+      getUserByEmail: record('getUserByEmail'),
+      createUser: record('createUser'),
+      updateUser: record('updateUser'),
+      setCustomUserClaims: record('setCustomUserClaims'),
+    };
+    const db = {
+      doc: jest.fn(() => {
+        calls.push('doc');
+        return { get: jest.fn(), set: jest.fn() };
+      }),
+    };
+    return { auth, db, calls, FieldValue: { delete: jest.fn() } };
+  }
+  const pw = 'test-password-not-real-just-for-test'.padEnd(20, 'x');
+
+  test.each([
+    ['the registry address at shytalk.dev', 'adult-power@shytalk.dev', 'shytalk.dev'],
+    ['a look-alike suffix', 'x@shytalk.app.evil.com', 'shytalk.app.evil.com'],
+    ['an address with no domain', 'no-at-sign', 'no domain'],
+  ])(
+    'refuses %s, naming the domain, and touches neither Auth nor Firestore',
+    async (_, email, named) => {
+      const stubs = recordingStubs();
+      const persona = { ...personas.find((p) => p.id === 'P-02'), email };
+      await expect(upsertPersona(persona, { ...stubs, pw })).rejects.toThrow(
+        `REFUSED_UNOWNED_DOMAIN P-02: ${named} is not a domain ShyTalk owns (SHY-0714); nothing was written`,
+      );
+      expect(stubs.calls).toEqual([]);
+    },
+  );
 });
 
 // ── applySocialGraph — writes numeric arrays ────────────────────────

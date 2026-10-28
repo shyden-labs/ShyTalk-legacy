@@ -66,9 +66,19 @@ describe('a push to develop', () => {
       web: true,
       android: true,
       ios: true,
-      seed: true,
       checks: true,
     });
+  });
+
+  // SHY-0714, decision 119 (Shyden 2026-10-28, "this needs to be removed"):
+  // the personas still live at shytalk.dev, a domain nobody owns, so a push
+  // never seeds them until PR 2 moves them to shytalk.app.
+  test('never seeds the personas, even when every area changed', () => {
+    expect(plan({ ...base, event: 'push', scope: ALL_CHANGED }).seed).toBe(false);
+  });
+
+  test('never seeds the personas on a fail-safe scope either', () => {
+    expect(plan({ ...base, event: 'push', scope: FAIL_SAFE }).seed).toBe(false);
   });
 
   test('deploys only the area the merge changed', () => {
@@ -121,6 +131,12 @@ describe('a hand-started dispatch', () => {
     expect(
       plan({ ...base, event: 'workflow_dispatch', scope: ONLY_WEB, inputs: TICKED }).backend,
     ).toBe(false);
+  });
+
+  test('a ticked seed box still seeds (the seeder itself refuses unowned addresses)', () => {
+    expect(
+      plan({ ...base, event: 'workflow_dispatch', scope: ALL_CHANGED, inputs: TICKED }).seed,
+    ).toBe(true);
   });
 
   test('the persona seed follows its box', () => {
@@ -192,6 +208,10 @@ describe('the daily catch-up', () => {
     });
   });
 
+  test('never seeds the personas until SHY-0714 moves them (decision 119)', () => {
+    expect(plan({ ...base, event: 'schedule', scope: ALL_CHANGED }).seed).toBe(false);
+  });
+
   test('with no baseline, fails safe and deploys', () => {
     expect(
       plan({
@@ -221,7 +241,7 @@ describe('asOutputs', () => {
       'web=true',
       'android=false',
       'ios=false',
-      'seed=true',
+      'seed=false',
       'checks=true',
       'changed_backend=false',
       'changed_web=true',

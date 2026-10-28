@@ -41,6 +41,8 @@
  * persona registry shape + helper logic without hitting Firebase.
  */
 
+const { emailDomain, isOwnedEmailDomain } = require('./lib/owned-email-domains');
+
 // DOB helper — ISO date string → ms (UTC midnight, matches age-verification system).
 const dobMs = (iso) => new Date(iso + 'T00:00:00Z').getTime();
 
@@ -478,11 +480,37 @@ function assertSafeProject(projectId) {
 }
 
 /**
+ * SHY-0714, decision 119 (Shyden 2026-10-28, "this needs to be removed"): no
+ * account is ever written at a domain ShyTalk does not own, since whoever
+ * registers that domain can reset the account's password.
+ */
+function unownedPersonas(list) {
+  return list.filter((p) => !isOwnedEmailDomain(emailDomain(p.email)));
+}
+
+/** Why the runner must not start, or null. Names ids only: CI logs are public. */
+function registryRefusal(list) {
+  const unowned = unownedPersonas(list);
+  if (unowned.length === 0) return null;
+  return (
+    `REFUSED_UNOWNED_DOMAIN ${unowned.length} of ${list.length} personas ` +
+    `(${unowned.map((p) => p.id).join(', ')}) are at a domain ShyTalk does not own ` +
+    '(SHY-0714); nothing was written'
+  );
+}
+
+/**
  * IO layer — needs an injected `auth` and `db` so the Jest suite can
  * stub them. The runner at the bottom of the file calls this with real
  * firebase-admin handles.
  */
 async function upsertPersona(p, ctx) {
+  if (unownedPersonas([p]).length > 0) {
+    throw new Error(
+      `REFUSED_UNOWNED_DOMAIN ${p.id}: ${emailDomain(p.email) ?? 'no domain'} ` +
+        'is not a domain ShyTalk owns (SHY-0714); nothing was written',
+    );
+  }
   const { auth, db, pw, FieldValue } = ctx;
 
   // 1. Auth user — create or update password + name + emailVerified
@@ -591,6 +619,8 @@ module.exports = {
   assertSafeProject,
   upsertPersona,
   applySocialGraph,
+  unownedPersonas,
+  registryRefusal,
 };
 
 // ── Runner ───────────────────────────────────────────────────────────
@@ -613,6 +643,12 @@ if (require.main === module) {
     assertSafeProject(projectId);
   } catch (e) {
     console.error(e.message);
+    process.exit(2);
+  }
+
+  const refusal = registryRefusal(personas);
+  if (refusal) {
+    console.error(refusal);
     process.exit(2);
   }
 

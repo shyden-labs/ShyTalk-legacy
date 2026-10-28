@@ -86,7 +86,11 @@ function plan({ event, baseline, head, scope, inputs = {} }) {
   }
   const out = { changed, reason };
   for (const area of AREAS) out[area] = requested(event, inputs, area) && changed[area];
-  out.seed = requested(event, inputs, 'seed');
+  // SHY-0714, decision 119 (Shyden 2026-10-28, "this needs to be removed"):
+  // the personas still live at shytalk.dev, a domain nobody owns, so only a
+  // hand-ticked box seeds them, and the seeder refuses that until SHY-0714
+  // PR 2 moves them to shytalk.app. PR 2 restores seeding on every push.
+  out.seed = event === 'workflow_dispatch' && requested(event, inputs, 'seed');
   out.checks = requested(event, inputs, 'checks');
   return out;
 }
